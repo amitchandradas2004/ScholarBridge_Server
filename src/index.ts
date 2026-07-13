@@ -27,7 +27,7 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
     const db = client.db(process.env.DB_NAME as string);
-    const scholarships = db.collection("scholarships");
+    const scholarshipCollection = db.collection("scholarships");
     // const collection = db.collection("user"); // or "users"
     // app.get("/api/user", async (req: Request, res: Response) => {
     //   const users = await collection.find({}).toArray();
@@ -37,15 +37,33 @@ async function run() {
     // Post scholarship api
     app.post("/api/scholarship", async (req: Request, res: Response) => {
       const scholarship = req.body;
-      const result = await scholarships.insertOne(scholarship);
+      const result = await scholarshipCollection.insertOne(scholarship);
       res.json(result);
     });
     //get all scholarships
     app.get("/api/scholarship", async (req: Request, res: Response) => {
       const scholarship = req.query;
-      const result = await scholarships.find(scholarship).toArray();
+      const result = await scholarshipCollection.find(scholarship).toArray();
       res.json(result);
     });
+
+    //my scholarships
+    app.get("/api/scholarship/user/:email", async (req, res) => {
+      try {
+        const email = req.params.email;
+
+        const scholarships = await scholarshipCollection
+          .find({ postedBy: email })
+          .toArray();
+
+        res.status(200).json(scholarships);
+      } catch (error) {
+        res.status(500).json({
+          message: "Something went wrong",
+        });
+      }
+    });
+
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!",
