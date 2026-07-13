@@ -14,7 +14,6 @@ app.get("/", (req: Request, res: Response) => {
   res.send("Welcome to the ScholarBridge API!");
 });
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -27,13 +26,23 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
-    // Send a ping to confirm a successful connection
+    const db = client.db(process.env.DB_NAME as string);
+    const scholarships = db.collection("scholarships");
+    // const collection = db.collection("user"); // or "users"
+    // app.get("/api/user", async (req: Request, res: Response) => {
+    //   const users = await collection.find({}).toArray();
+    //   res.json(users);
+    // });
+    app.post("/api/scholarship", async (req: Request, res: Response) => {
+      const scholarship = req.body;
+      const result = await scholarships.insertOne(scholarship);
+      res.json(result);
+    });
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!",
     );
   } finally {
-    // Ensures that the client will close when you finish/error
     // await client.close();
   }
 }
