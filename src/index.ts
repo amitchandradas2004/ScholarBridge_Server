@@ -33,9 +33,17 @@ async function run() {
     //   const users = await collection.find({}).toArray();
     //   res.json(users);
     // });
+
+    // Post scholarship api
     app.post("/api/scholarship", async (req: Request, res: Response) => {
       const scholarship = req.body;
       const result = await scholarships.insertOne(scholarship);
+      res.json(result);
+    });
+    //get all scholarships
+    app.get("/api/scholarship", async (req: Request, res: Response) => {
+      const scholarship = req.query;
+      const result = await scholarships.find(scholarship).toArray();
       res.json(result);
     });
     await client.db("admin").command({ ping: 1 });
