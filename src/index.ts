@@ -58,11 +58,30 @@ async function run() {
       const result = await scholarshipCollection.insertOne(scholarship);
       res.json(result);
     });
-    //get all scholarships
+
+    //get all scholarships  : pagination added
     app.get("/api/scholarship", async (req: Request, res: Response) => {
-      const scholarship = req.query;
-      const result = await scholarshipCollection.find(scholarship).toArray();
-      res.json(result);
+      try {
+        const { page = "1", limit = "12", ...filters } = req.query;
+
+        const currentPage = Number(page);
+        const pageSize = Number(limit);
+        const skip = (currentPage - 1) * pageSize;
+
+        const result = await scholarshipCollection
+          .find(filters)
+          .skip(skip)
+          .limit(pageSize)
+          .toArray();
+        const total = await scholarshipCollection.countDocuments(filters);
+        const totalPages = Math.ceil(total / pageSize);
+
+        res.json({ data: result, currentPage: Number(page), totalPages });
+      } catch (error) {
+        res.status(500).json({
+          message: "Failed to fetch scholarships.",
+        });
+      }
     });
     //delete scholarship
     app.delete("/api/scholarship/:id", async (req: Request, res: Response) => {
@@ -87,7 +106,6 @@ async function run() {
       const result = await scholarshipCollection.findOne(query);
       res.json(result);
     });
-
     //my scholarships
     app.get("/api/scholarship/user/:email", async (req, res) => {
       try {
