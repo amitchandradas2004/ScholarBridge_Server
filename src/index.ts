@@ -1,6 +1,7 @@
 import cors from "cors";
 import dotenv from "dotenv";
 import express, { Request, Response } from "express";
+import { ObjectId } from "mongodb";
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT;
@@ -29,10 +30,10 @@ async function run() {
     const db = client.db(process.env.DB_NAME as string);
     const scholarshipCollection = db.collection("scholarships");
     const userCollection = db.collection("user");
-    app.get("/api/user", async (req: Request, res: Response) => {
-      const users = await userCollection.find({}).toArray();
-      res.json(users);
-    });
+    // app.get("/api/user", async (req: Request, res: Response) => {
+    //   const users = await userCollection.find({}).toArray();
+    //   res.json(users);
+    // });
 
     //get specfic user
     app.get("/api/user/:email", async (req: Request, res: Response) => {
@@ -61,6 +62,16 @@ async function run() {
     app.get("/api/scholarship", async (req: Request, res: Response) => {
       const scholarship = req.query;
       const result = await scholarshipCollection.find(scholarship).toArray();
+      res.json(result);
+    });
+
+    //get scholarship details
+    app.get("/api/scholarship/:id", async (req: Request, res: Response) => {
+      const id = req.params.id;
+      const query = {
+        _id: new ObjectId(id as string),
+      };
+      const result = await scholarshipCollection.findOne(query);
       res.json(result);
     });
 
