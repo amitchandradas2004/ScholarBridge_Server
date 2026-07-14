@@ -64,7 +64,20 @@ async function run() {
       const result = await scholarshipCollection.find(scholarship).toArray();
       res.json(result);
     });
-
+    //delete scholarship
+    app.delete("/api/scholarship/:id", async (req: Request, res: Response) => {
+      try {
+        const { id } = req.params;
+        const result = await scholarshipCollection.deleteOne({
+          _id: new ObjectId(id as string),
+        });
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({
+          message: "Failed to delete startup",
+        });
+      }
+    });
     //get scholarship details
     app.get("/api/scholarship/:id", async (req: Request, res: Response) => {
       const id = req.params.id;
