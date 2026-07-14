@@ -28,12 +28,29 @@ async function run() {
     await client.connect();
     const db = client.db(process.env.DB_NAME as string);
     const scholarshipCollection = db.collection("scholarships");
-    // const collection = db.collection("user"); // or "users"
-    // app.get("/api/user", async (req: Request, res: Response) => {
-    //   const users = await collection.find({}).toArray();
-    //   res.json(users);
-    // });
+    const userCollection = db.collection("user");
+    app.get("/api/user", async (req: Request, res: Response) => {
+      const users = await userCollection.find({}).toArray();
+      res.json(users);
+    });
 
+    //get specfic user
+    app.get("/api/user/:email", async (req: Request, res: Response) => {
+      try {
+        const email = req.params.email;
+        const user = await userCollection.findOne({ email });
+        if (!user) {
+          return res.status(404).json({
+            message: "User not found",
+          });
+        }
+        res.status(200).json(user);
+      } catch (error) {
+        res.status(500).json({
+          message: "Something went wrong",
+        });
+      }
+    });
     // Post scholarship api
     app.post("/api/scholarship", async (req: Request, res: Response) => {
       const scholarship = req.body;
