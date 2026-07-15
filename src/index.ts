@@ -60,23 +60,77 @@ async function run() {
     });
 
     //get all scholarships  : pagination added
+    // app.get("/api/scholarship", async (req: Request, res: Response) => {
+    //   try {
+    //     const { page = "1", limit = "12", ...filters } = req.query;
+
+    //     const currentPage = Number(page);
+    //     const pageSize = Number(limit);
+    //     const skip = (currentPage - 1) * pageSize;
+
+    //     const result = await scholarshipCollection
+    //       .find(filters)
+    //       .skip(skip)
+    //       .limit(pageSize)
+    //       .toArray();
+    //     const total = await scholarshipCollection.countDocuments(filters);
+    //     const totalPages = Math.ceil(total / pageSize);
+
+    //     res.json({ data: result, currentPage: Number(page), totalPages });
+    //   } catch (error) {
+    //     res.status(500).json({
+    //       message: "Failed to fetch scholarships.",
+    //     });
+    //   }
+    // });
+
     app.get("/api/scholarship", async (req: Request, res: Response) => {
       try {
-        const { page = "1", limit = "12", ...filters } = req.query;
+        const { page = "1", limit = "12", search = "", ...filters } = req.query;
 
         const currentPage = Number(page);
         const pageSize = Number(limit);
         const skip = (currentPage - 1) * pageSize;
 
+        const query: any = {};
+
+        // Search by scholarship name or university name
+        if (search) {
+          query.$or = [
+            {
+              scholarshipName: {
+                $regex: search,
+                $options: "i",
+              },
+            },
+            {
+              universityName: {
+                $regex: search,
+                $options: "i",
+              },
+            },
+          ];
+        }
+
+        
+        Object.assign(query, filters);
+
+        const total = await scholarshipCollection.countDocuments(query);
+
         const result = await scholarshipCollection
-          .find(filters)
+          .find(query)
           .skip(skip)
           .limit(pageSize)
           .toArray();
-        const total = await scholarshipCollection.countDocuments(filters);
+
         const totalPages = Math.ceil(total / pageSize);
 
-        res.json({ data: result, currentPage: Number(page), totalPages });
+        res.json({
+          data: result,
+          currentPage,
+          totalPages,
+          total,
+        });
       } catch (error) {
         res.status(500).json({
           message: "Failed to fetch scholarships.",
