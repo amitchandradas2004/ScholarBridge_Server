@@ -60,33 +60,16 @@ async function run() {
     });
 
     //get all scholarships  : pagination added
-    // app.get("/api/scholarship", async (req: Request, res: Response) => {
-    //   try {
-    //     const { page = "1", limit = "12", ...filters } = req.query;
-
-    //     const currentPage = Number(page);
-    //     const pageSize = Number(limit);
-    //     const skip = (currentPage - 1) * pageSize;
-
-    //     const result = await scholarshipCollection
-    //       .find(filters)
-    //       .skip(skip)
-    //       .limit(pageSize)
-    //       .toArray();
-    //     const total = await scholarshipCollection.countDocuments(filters);
-    //     const totalPages = Math.ceil(total / pageSize);
-
-    //     res.json({ data: result, currentPage: Number(page), totalPages });
-    //   } catch (error) {
-    //     res.status(500).json({
-    //       message: "Failed to fetch scholarships.",
-    //     });
-    //   }
-    // });
 
     app.get("/api/scholarship", async (req: Request, res: Response) => {
       try {
-        const { page = "1", limit = "12", search = "", ...filters } = req.query;
+        const {
+          page = "1",
+          limit = "12",
+          search = "",
+          sort = "",
+          ...filters
+        } = req.query;
 
         const currentPage = Number(page);
         const pageSize = Number(limit);
@@ -94,7 +77,6 @@ async function run() {
 
         const query: any = {};
 
-        // Search by scholarship name or university name
         if (search) {
           query.$or = [
             {
@@ -112,15 +94,73 @@ async function run() {
           ];
         }
 
-        
         Object.assign(query, filters);
+
+        let sortOption: any = {};
+
+        switch (sort) {
+          case "latest":
+            sortOption = { _id: -1 };
+            break;
+
+          case "oldest":
+            sortOption = { _id: 1 };
+            break;
+
+          case "amount-desc":
+            sortOption = { amountNumber: -1 };
+            break;
+
+          case "amount-asc":
+            sortOption = { amountNumber: 1 };
+            break;
+
+          case "deadline-asc":
+            sortOption = { deadline: 1 };
+            break;
+
+          case "name-asc":
+            sortOption = { scholarshipName: 1 };
+            break;
+
+          default:
+            sortOption = { _id: -1 };
+        }
 
         const total = await scholarshipCollection.countDocuments(query);
 
         const result = await scholarshipCollection
-          .find(query)
-          .skip(skip)
-          .limit(pageSize)
+          .aggregate([
+            {
+              $match: query,
+            },
+
+            {
+              $addFields: {
+                amountNumber: {
+                  $toDouble: "$amount",
+                },
+              },
+            },
+
+            {
+              $sort: sortOption,
+            },
+
+            {
+              $skip: skip,
+            },
+
+            {
+              $limit: pageSize,
+            },
+
+            {
+              $project: {
+                amountNumber: 0,
+              },
+            },
+          ])
           .toArray();
 
         const totalPages = Math.ceil(total / pageSize);
@@ -132,6 +172,8 @@ async function run() {
           total,
         });
       } catch (error) {
+        console.error(error);
+
         res.status(500).json({
           message: "Failed to fetch scholarships.",
         });
